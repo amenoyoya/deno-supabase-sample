@@ -1,0 +1,20 @@
+{
+    "[json]": {
+        "editor.formatOnSave": true,
+    },
+    "[typescript]": {
+        "editor.formatOnSave": true,
+    },
+    "[typescriptreact]": {
+        "editor.formatOnSave": true,
+    },
+    "deno.enable": true,
+    "deno.lint": true,
+    "cSpell.userWords": [
+        "deno",
+        "supabase",
+        "inbucket",
+        "preact",
+        "twind"
+    ]
+}
