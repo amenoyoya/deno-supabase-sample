@@ -76,3 +76,11 @@ $ supabase start
 # If you want to stop supabase docker containers, execute the following command
 $ supabase stop
 ```
+
+※ Supabase 起動時に出力される `anon key` は、アプリケーションから Supabase サービスを実行するために必要なためメモしておくこと
+
+---
+
+## Create Application
+
+[01-create-app.md](./docs/create-app.md)
