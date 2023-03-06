@@ -177,7 +177,10 @@ export default function Greet(props: PageProps<ResponseBody>) {
 </div>
 ```
 
-### Deno Task の設定
+---
+
+## Deno Task の設定
+
 現状、以下の2つのコマンドを並列に実行しなければいけない状態になっている
 
 - Supabase Edge Functions サーバ (`test-connection`) 実行
@@ -189,7 +192,7 @@ export default function Greet(props: PageProps<ResponseBody>) {
 
 （起動中の Supabase Edge Functions サーバと Fresh 開発サーバは `Ctrl + C` で停止しておく）
 
-#### `./deno.json`
+### `./deno.json`
 ```json
 {
     "tasks": {
@@ -210,7 +213,10 @@ Deno Task は、`deno.json` の `tasks` キー配下にコマンドを記述す�
 $ deno task start
 ```
 
-### ダイナミックルーティング
+---
+
+## ダイナミックルーティング
+
 ここまでで Fresh ⇒ Supabase Edge Functions の疎通は取れたが、現状、固定のレスポンスしか取ることができない
 
 そのため、ダイナミックルーティングを活用して、リクエストパスを変数化 ⇒ Supabase Edge Functions に任意の値でリクエストを送れるようにしてみる
@@ -219,7 +225,7 @@ Fresh では `routes/**/[name].tsx` のような形でファイルを作成す�
 
 - 参考: https://fresh.deno.dev/docs/getting-started/dynamic-routes
 
-#### `./app/routes/test-connection/[request_text].tsx`
+### `./app/routes/test-connection/[request_text].tsx`
 ```tsx
 import { Handlers, PageProps, Context } from "$fresh/server.ts";
 

@@ -31,7 +31,8 @@ Sample project for Deno Fresh + Supabase
 - OS: Ubuntu 20.04 (on Windows Subsystem for Linux)
 - Docker: 23.0.1
 - Homebrew: 4.0.4
-- VS Code: 1.75.1
+- Browser: Chrome
+- Editor: VS Code
     - Extensions:
         - `Code Spell Checker`
         - `Prettier - Code formatter`
@@ -56,9 +57,12 @@ $ brew install deno supabase/tap/supabase
     - Inbucket (Mocked SMTP server): http://localhost:54324
 
 ```bash
-# Launch docker-redis container (image: redis@latest)
+# Create and launch docker-redis container (image: redis@latest)
 $ docker run -d -p 6379:6379 --name docker-redis redis
 ## => docker://docker-redis:6379
+
+# If docker-redis container is already created, execute the following command (start docker-redis container)
+$ docker start docker-redis
 
 # Initialize supabase project
 $ supabase init
