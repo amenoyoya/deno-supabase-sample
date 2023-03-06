@@ -1,5 +1,8 @@
 {
     "tasks": {
+        "docker:create": "docker run -d -p 6379:6379 --name docker-redis && supabase init",
+        "docker:start": "docker start docker-redis && supabase start",
+        "docker:stop": "docker stop docker-redis && supabase stop",
         "start": "supabase functions serve test-connection & deno task --cwd app start"
     }
 }

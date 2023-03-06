@@ -188,7 +188,7 @@ export default function Greet(props: PageProps<ResponseBody>) {
 - Fresh 開発サーバ実行
     - `$ deno task --cwd app start`
 
-この2つのコマンドをまとめて実行するための Deno Task を作成してみる
+この2つのコマンドをまとめて実行するための Deno Task を作成しておく
 
 （起動中の Supabase Edge Functions サーバと Fresh 開発サーバは `Ctrl + C` で停止しておく）
 
@@ -196,16 +196,14 @@ export default function Greet(props: PageProps<ResponseBody>) {
 ```json
 {
     "tasks": {
+        // ...既存の Task は省略
+
         "start": "supabase functions serve test-connection & deno task --cwd app start"
     }
 }
 ```
 
-Deno Task は、`deno.json` の `tasks` キー配下にコマンドを記述することで作成することができる
-
-- 参考:
-    - https://deno.land/manual@v1.31.1/tools/task_runner
-    - https://deno.land/manual@v1.31.1/getting_started/configuration_file
+複数のコマンドを並列実行したい場合は `&` で繋げれば良い
 
 上記のように Deno Task を作成することで `deno task start` コマンド一発で、Supabase Edge Functions サーバと Fresh 開発サーバを起動できるようになる
 

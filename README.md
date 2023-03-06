@@ -85,6 +85,61 @@ $ supabase stop
 
 ---
 
+## Deno Task の設定
+
+Redis サーバコンテナと Supabase サービスコンテナは、OS再起動時に毎回起動し直す必要がある
+
+毎回複数のコマンドを打つのは面倒であるため、Deno Task を作成してコマンドをまとめる
+
+Deno Task は、`deno.json` の `tasks` キー配下にコマンドを記述することで作成することができる
+
+- 参考:
+    - https://deno.land/manual@v1.31.1/tools/task_runner
+    - https://deno.land/manual@v1.31.1/getting_started/configuration_file
+
+ここでは、以下の3つの Deno Task を作成する
+
+1. `docker:create`
+    - Docker コンテナの作成と起動を行う
+    - プロジェクト作成時に1回だけ実行する以下のコマンドを順次実行
+        - `docker run -d -p 6379:6379 --name docker-redis redis`
+        - `supabase init`
+2. `docker:start`
+    - 作成済みの Docker コンテナを起動する
+    - Docker コンテナを起動したい場合に実行する以下のコマンドを順次実行
+        - `docker start docker-redis`
+        - `supabase start`
+3. `docker:stop`
+    - 起動中の Docker コンテナを停止する
+    - Docker コンテナを停止したい場合に実行する以下のコマンドを順次実行
+        - `docker stop docker-redis`
+        - `supabase stop`
+
+### `./deno.json`
+```json
+{
+    "tasks": {
+        "docker:create": "docker run -d -p 6379:6379 --name docker-redis && supabase init",
+        "docker:start": "docker start docker-redis && supabase start",
+        "docker:stop": "docker stop docker-redis && supabase stop"
+    }
+}
+```
+
+### Usage
+```bash
+# Create docker containers
+$ deno task docker:create
+
+# Launch docker containers
+$ deno task docker:start
+
+# Terminate docker containers
+$ deno task docker:stop
+```
+
+---
+
 ## Create Application
 
 [01-create-app.md](./docs/create-app.md)
