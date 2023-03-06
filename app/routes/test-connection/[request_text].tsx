@@ -33,14 +33,15 @@ export const handler: Handlers<ResponseBody | null> = {
           Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: "Functions" }),
+        // ダイナミックルーティングで指定される [request_text] 値をリクエストボディとして設定
+        body: JSON.stringify({ name: ctx.params.request_text }),
       }
     );
 
     if (result.status === 404) {
       return ctx.render(null);
     }
-    const message: ResponseBody = await result.json(); // => will be { message: 'Hello Functions!' }
+    const message: ResponseBody = await result.json(); // => will be { message: `Hello ${ctx.params.request_text}!` }
     return ctx.render(message);
   },
 };

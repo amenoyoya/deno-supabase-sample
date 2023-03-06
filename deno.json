@@ -1,0 +1,5 @@
+{
+    "tasks": {
+        "start": "supabase functions serve test-connection & deno task --cwd app start"
+    }
+}
