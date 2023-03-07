@@ -10,6 +10,8 @@
     "twind/": "https://esm.sh/twind@0.16.17/",
     "dotenv/": "https://deno.land/std@0.145.0/dotenv/",
     "redis/": "https://deno.land/x/redis@v0.25.0/",
-    "fresh_session/": "https://deno.land/x/fresh_session@0.2.0/"
+    "fresh_session/": "https://deno.land/x/fresh_session@0.2.0/",
+    "deno_csrf/": "https://deno.land/x/deno_csrf@0.0.5/",
+    "std_cookie": "https://deno.land/std@0.159.0/http/cookie.ts"
   }
 }
