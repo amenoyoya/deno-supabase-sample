@@ -101,9 +101,9 @@ Fresh から `.env` ファイルの環境変数情報を読み込むように、
 
 `.env` から読み込んだ環境変数情報は `Deno.env.get(envKey)` 関数で取得することができる
 
-http://localhost:8000/test-connection/ ページにて Supabase Edge Functions との疎通確認を行えるように、`routes/test-connection/index.tsx` を作成する
+http://localhost:8000/test/supabase-connection/ ページにて Supabase Edge Functions との疎通確認を行えるように、`routes/test/supabase-connection/index.tsx` を作成する
 
-#### `./app/routes/test-connection/index.tsx`
+#### `./app/routes/test/supabase-connection/index.tsx`
 ```tsx
 import { Handlers, PageProps, Context } from "$fresh/server.ts";
 
@@ -116,22 +116,21 @@ interface ResponseBody {
 
 /**
  * Custom handlers.
- * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数を定義すると、
- *   ルートへのリクエストが発生するたびに呼ばれるイベントを作成することができる
+ * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数がHTTPリクエスト処理ハンドラーとなる
+ * HTTPメソッド（GET, POST, PUT, PATCH, DELETE）ごとに処理ハンドラーを定義可能
  *
  * @see [CustomHandlers]{@link https://fresh.deno.dev/docs/getting-started/custom-handlers}
  */
 export const handler: Handlers<ResponseBody | null> = {
   /**
    * GET custom handler function.
-   * ページコンポーネントの描画前に呼び出されるハンドラー
-   * 戻り値として Context#render(props: PageProps<ResponseBody>) の結果を返すことでページコンポーネントを描画することができる
+   * HTTP GET リクエストに対する処理ハンドラーを定義
    *
    * @param {Request} _req - Server request object.
-   * @param ctx - Server context object.
+   * @param {Context} ctx - Server context object.
    * @returns {Promise<Response>} It returns a server response object.
    */
-  async GET(_req, ctx: Context) {
+  async GET(_req: Request, ctx: Context) {
     const result = await fetch(
       Deno.env.get("SUPABASE_EDGE_FUNCTION_END_POINT"),
       {
@@ -148,13 +147,14 @@ export const handler: Handlers<ResponseBody | null> = {
       return ctx.render(null);
     }
     const message: ResponseBody = await result.json(); // => will be { message: 'Hello Functions!' }
+
+    // ctx.render(props) は export default で定義された Page component の描画結果をレスポンスとして返す
     return ctx.render(message);
   },
 };
 
 /**
  * Page component.
- * default export した関数／クラス型コンポーネントで定義された JSX がレンダリングされる
  *
  * @see [CreateRoute]{@link https://fresh.deno.dev/docs/getting-started/create-a-route}
  * @param {PageProps<ResponseBody>} props - Component properties.
@@ -169,7 +169,7 @@ export default function Greet(props: PageProps<ResponseBody>) {
 }
 ```
 
-⇒ http://localhost:8000/test-connection/ にアクセスすると、以下のように表示される
+⇒ http://localhost:8000/test/supabase-connection/ にアクセスすると、以下のように表示される
 
 ```html
 <div>
@@ -223,7 +223,7 @@ Fresh では `routes/**/[name].tsx` のような形でファイルを作成す�
 
 - 参考: https://fresh.deno.dev/docs/getting-started/dynamic-routes
 
-### `./app/routes/test-connection/[request_text].tsx`
+### `./app/routes/test/supabase-connection/[request_text].tsx`
 ```tsx
 import { Handlers, PageProps, Context } from "$fresh/server.ts";
 
@@ -236,22 +236,21 @@ interface ResponseBody {
 
 /**
  * Custom handlers.
- * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数を定義すると、
- *   ルートへのリクエストが発生するたびに呼ばれるイベントを作成することができる
+ * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数がHTTPリクエスト処理ハンドラーとなる
+ * HTTPメソッド（GET, POST, PUT, PATCH, DELETE）ごとに処理ハンドラーを定義可能
  *
  * @see [CustomHandlers]{@link https://fresh.deno.dev/docs/getting-started/custom-handlers}
  */
 export const handler: Handlers<ResponseBody | null> = {
   /**
    * GET custom handler function.
-   * ページコンポーネントの描画前に呼び出されるハンドラー
-   * 戻り値として Context#render(props: PageProps<ResponseBody>) の結果を返すことでページコンポーネントを描画することができる
+   * HTTP GET リクエストに対する処理ハンドラーを定義
    *
    * @param {Request} _req - Server request object.
-   * @param ctx - Server context object.
+   * @param {Context} ctx - Server context object.
    * @returns {Promise<Response>} It returns a server response object.
    */
-  async GET(_req, ctx: Context) {
+  async GET(_req: Request, ctx: Context) {
     const result = await fetch(
       Deno.env.get("SUPABASE_EDGE_FUNCTION_END_POINT"),
       {
@@ -269,13 +268,14 @@ export const handler: Handlers<ResponseBody | null> = {
       return ctx.render(null);
     }
     const message: ResponseBody = await result.json(); // => will be { message: `Hello ${ctx.params.request_text}!` }
+
+    // ctx.render(props) は export default で定義された Page component の描画結果をレスポンスとして返す
     return ctx.render(message);
   },
 };
 
 /**
  * Page component.
- * default export した関数／クラス型コンポーネントで定義された JSX がレンダリングされる
  *
  * @see [CreateRoute]{@link https://fresh.deno.dev/docs/getting-started/create-a-route}
  * @param {PageProps<ResponseBody>} props - Component properties.
@@ -290,10 +290,45 @@ export default function Greet(props: PageProps<ResponseBody>) {
 }
 ```
 
-⇒ これで、例えば http://localhost:8000/test-connection/DynamicRouting にアクセスすると、以下のように表示されるようになる
+⇒ これで、例えば http://localhost:8000/test/supabase-connection/DynamicRouting にアクセスすると、以下のように表示されるようになる
 
 ```html
 <div>
   Response <b>'Hello DynamicRouting!'</b> from supabase edge functions
 </div>
+```
+
+---
+
+## HTML 言語設定
+
+Fresh はデフォルトで `html lang="en"` が設定されており、英語用のWebアプリケーションとなっている
+
+これを日本語対応にするため、`html lang="ja"` を設定する
+
+### `./app/main.ts`
+```diff
+  /// <reference no-default-lib="true" />
+  /// <reference lib="dom" />
+  /// <reference lib="dom.iterable" />
+  /// <reference lib="dom.asynciterable" />
+  /// <reference lib="deno.ns" />
+  
+  import "dotenv/load.ts"; // for loading .env file
+- import { start } from "$fresh/server.ts";
++ import { start, RenderFunction } from "$fresh/server.ts";
+  import manifest from "./fresh.gen.ts";
+  
+  import twindPlugin from "$fresh/plugins/twind.ts";
+  import twindConfig from "./twind.config.ts";
+
++ const renderFn: RenderFunction = (ctx, render) => {
++   ctx.lang = "ja";
++   render();
++ };
+  
+  await start(manifest, {
+    plugins: [twindPlugin(twindConfig)],
++   render: renderFn,
+  });
 ```

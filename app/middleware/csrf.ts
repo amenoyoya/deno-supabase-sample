@@ -21,8 +21,8 @@ import { type State } from "./session.ts";
  */
 function computeTokenPair() {
   return computeHmacTokenPair(
-    Deno.env.get("HMAC_SECRET"),
-    Deno.env.get("HMAC_SALT")
+    Deno.env.get("HMAC_SECRET") as string,
+    Deno.env.get("HMAC_SALT") as number
   );
 }
 
@@ -38,7 +38,7 @@ function computeTokenPair() {
  */
 function verifyTokenPair(tokenStr: string, cookieStr: string): boolean {
   return computeVerifyHmacTokenPair(
-    Deno.env.get("HMAC_SECRET"),
+    Deno.env.get("HMAC_SECRET") as string,
     tokenStr,
     cookieStr
   );
@@ -88,26 +88,32 @@ export async function verifyCsrfHandler(
   req: Request,
   ctx: MiddlewareHandlerContext<State>
 ) {
+  // Request#formData() メソッドは同一処理内で2回以上呼ぶと Body already consumed エラーが発生する
+  // そのため middleware 内では Request#clone() に対して処理を行うようにする
+  const tmpReq = req.clone();
+
   // If the current route method is not POST, do nothing.
-  if (req.method !== "POST") {
+  if (tmpReq.method !== "POST") {
     return await ctx.next();
   }
 
   // Get CSRF token from formData.csrfToken.
-  const form = await req.formData();
+  const form = await tmpReq.formData();
   const formToken = form.get("csrfToken");
-  const cookie = getCookies(req.headers);
+  const cookie = getCookies(tmpReq.headers);
   const cookieToken = cookie._cookie_token;
 
   const isCsrfTokenVerified = verifyTokenPair(formToken, cookieToken);
-  if (isCsrfTokenVerified()) {
+  if (isCsrfTokenVerified) {
     return await ctx.next();
   }
+
   // If the requested CSRF token is invalid,
-  //   set a flash message to display error message and redirect to /error.
+  //   set a flash message to display error message
+  //   and return 403 error response.
+  const { session } = ctx.state;
   session.flash("Error", "不適切なリクエスト");
   return new Response("", {
-    status: 303,
-    headers: { Location: "/error" },
+    status: 403,
   });
 }

@@ -9,22 +9,21 @@ interface ResponseBody {
 
 /**
  * Custom handlers.
- * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数を定義すると、
- *   ルートへのリクエストが発生するたびに呼ばれるイベントを作成することができる
+ * Fresh では `Request => Response` | `Request => Promise<Response>` 型の関数がHTTPリクエスト処理ハンドラーとなる
+ * HTTPメソッド（GET, POST, PUT, PATCH, DELETE）ごとに処理ハンドラーを定義可能
  *
  * @see [CustomHandlers]{@link https://fresh.deno.dev/docs/getting-started/custom-handlers}
  */
 export const handler: Handlers<ResponseBody | null> = {
   /**
    * GET custom handler function.
-   * ページコンポーネントの描画前に呼び出されるハンドラー
-   * 戻り値として Context#render(props: PageProps<ResponseBody>) の結果を返すことでページコンポーネントを描画することができる
+   * HTTP GET リクエストに対する処理ハンドラーを定義
    *
    * @param {Request} _req - Server request object.
-   * @param ctx - Server context object.
+   * @param {Context} ctx - Server context object.
    * @returns {Promise<Response>} It returns a server response object.
    */
-  async GET(_req, ctx: Context) {
+  async GET(_req: Request, ctx: Context) {
     const result = await fetch(
       Deno.env.get("SUPABASE_EDGE_FUNCTION_END_POINT"),
       {
@@ -41,13 +40,14 @@ export const handler: Handlers<ResponseBody | null> = {
       return ctx.render(null);
     }
     const message: ResponseBody = await result.json(); // => will be { message: 'Hello Functions!' }
+
+    // ctx.render(props) は export default で定義された Page component の描画結果をレスポンスとして返す
     return ctx.render(message);
   },
 };
 
 /**
  * Page component.
- * default export した関数／クラス型コンポーネントで定義された JSX がレンダリングされる
  *
  * @see [CreateRoute]{@link https://fresh.deno.dev/docs/getting-started/create-a-route}
  * @param {PageProps<ResponseBody>} props - Component properties.

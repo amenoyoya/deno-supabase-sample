@@ -149,7 +149,9 @@ export function sessionHandler(
 
 # HMAC ハッシュ生成用の鍵とソルト
 # ※ 暗号化強度を高めるため、鍵とソルト情報はランダムに設定して非公開にすること
-HMAC_SECRET=hmac0123456789key
+# - HMAC_SECRET: 32文字の英数字にすること
+# - MAC_SALT: 任意の数値にすること
+HMAC_SECRET=a1234567890bcdefa1234567890bcdef
 HMAC_SALT=123
 ```
 
@@ -190,8 +192,8 @@ import { type State } from "./session.ts";
  */
 function computeTokenPair() {
   return computeHmacTokenPair(
-    Deno.env.get("HMAC_SECRET"),
-    Deno.env.get("HMAC_SALT")
+    Deno.env.get("HMAC_SECRET") as string,
+    Deno.env.get("HMAC_SALT") as number
   );
 }
 
@@ -207,7 +209,7 @@ function computeTokenPair() {
  */
 function verifyTokenPair(tokenStr: string, cookieStr: string): boolean {
   return computeVerifyHmacTokenPair(
-    Deno.env.get("HMAC_SECRET"),
+    Deno.env.get("HMAC_SECRET") as string,
     tokenStr,
     cookieStr
   );
@@ -257,27 +259,33 @@ export async function verifyCsrfHandler(
   req: Request,
   ctx: MiddlewareHandlerContext<State>
 ) {
+  // Request#formData() メソッドは同一処理内で2回以上呼ぶと Body already consumed エラーが発生する
+  // そのため middleware 内では Request#clone() に対して処理を行うようにする
+  const tmpReq = req.clone();
+
   // If the current route method is not POST, do nothing.
-  if (req.method !== "POST") {
+  if (tmpReq.method !== "POST") {
     return await ctx.next();
   }
 
   // Get CSRF token from formData.csrfToken.
-  const form = await req.formData();
+  const form = await tmpReq.formData();
   const formToken = form.get("csrfToken");
-  const cookie = getCookies(req.headers);
+  const cookie = getCookies(tmpReq.headers);
   const cookieToken = cookie._cookie_token;
 
   const isCsrfTokenVerified = verifyTokenPair(formToken, cookieToken);
-  if (isCsrfTokenVerified()) {
+  if (isCsrfTokenVerified) {
     return await ctx.next();
   }
+
   // If the requested CSRF token is invalid,
-  //   set a flash message to display error message and redirect to /error.
+  //   set a flash message to display error message
+  //   and return 403 error response.
+  const { session } = ctx.state;
   session.flash("Error", "不適切なリクエスト");
   return new Response("", {
-    status: 303,
-    headers: { Location: "/error" },
+    status: 403,
   });
 }
 ```
@@ -292,48 +300,136 @@ CSRFチェックミドルウェアは、以下の2つのハンドラーで構成
     - フォームリクエストに含まれる CSRF トークンを検証する
     - フォームの送信先ルートに適用する
 
-CSRF トークンの検証エラーが発生した場合は `/error` ページへリダイレクトさせるため、エラーページも実装しておく
+### CSRFチェックミドルウェアの動作確認
+CSRFチェックミドルウェアを実装できたため、その動作確認を行う
 
-#### `./app/routes/error.tsx`
+以下のようにテスト用ページを構成する
+
+```bash
+routes/
+|_ test/
+   |_ csrf/
+      |_ form/
+      |  |_ _middleware.ts # generateCsrfHandler 適用
+      |  |_ invalid.tsx    # CSRFトークンを設定しないフォーム
+      |  |_ valid.tsx      # CSRFトークンを設定したフォーム
+      |
+      |_ result/
+         |_ _middleware.ts # verifyCsrfHandler 適用
+         |_ index.tsx      # フォーム送信結果
+```
+
+#### `./app/routes/test/csrf/form/_middleware.ts`
+```typescript
+import { generateCsrfHandler } from "../../../../middleware/csrf.ts";
+
+export const handler = [generateCsrfHandler];
+```
+
+#### `./app/routes/test/csrf/form/invalid.tsx`
 ```tsx
 import { Head } from "$fresh/runtime.ts";
-import { Context, Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "fresh_session/mod.ts";
 
-export const handler: Handlers = {
-  /**
-   * GET custom handler function.
-   * Set an error message from session before rendering the page component.
-   *
-   * @param {Request} _req - Server request object.
-   * @param ctx - Server context object.
-   * @returns {Promise<Response>} It returns a server response object.
-   */
-  async GET(_req: Request, ctx: Context<WithSession>) {
-    const { session } = ctx.state;
-    return await ctx.render({
-      errorMessage: session.flash("Error") || "Unknown error",
-    });
-  },
-};
-
-/**
- * Page component.
- *
- * @param {PageProps<ResponseBody>} props - Component properties.
- * @returns {JSXElementConstructor<any>} It returns a JSX object.
- */
-export default function ErrorPage(props: PageProps<ResponseBody>) {
+export default function InvalidForm() {
   return (
     <>
       <Head>
-        <title>Error</title>
+        <title>Invalid CSRF form test</title>
       </Head>
-      <div class="p-4 mx-auto max-w-screen-md">
-        <h1 class="text-3xl font-bold">System Error</h1>
-        <p class="mx-6 my-6">{props.data.errorMessage}</p>
-      </div>
+      <main class="container mx-auto my-4">
+        <h1 class="text-3xl font-bold my-2">CSRFトークンなしフォーム</h1>
+        <form method="POST" action="/test/csrf/result">
+          <input
+            type="submit"
+            value="送信"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+          />
+        </form>
+      </main>
     </>
   );
 }
 ```
+
+#### `./app/routes/test/csrf/form/valid.tsx`
+```tsx
+import { Head } from "$fresh/runtime.ts";
+
+export const handler: Handlers = {
+  GET(_req: Request, ctx: Context<WithSession>) {
+    return ctx.render({
+      csrfToken: ctx.state.session.get("csrf").tokenStr,
+    });
+  },
+};
+
+export default function ValidForm(props: PageProps) {
+  return (
+    <>
+      <Head>
+        <title>Valid CSRF form test</title>
+      </Head>
+      <main class="container mx-auto my-4">
+        <h1 class="text-3xl font-bold my-2">CSRFトークン付きフォーム</h1>
+        <form method="POST" action="/test/csrf/result">
+          <input type="hidden" name="csrfToken" value={props.data.csrfToken} />
+          <input
+            type="submit"
+            value="送信"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+          />
+        </form>
+      </main>
+    </>
+  );
+}
+```
+
+#### `./app/routes/test/csrf/result/_middleware.ts`
+```typescript
+import { verifyCsrfHandler } from "../../../../middleware/csrf.ts";
+
+export const handler = [verifyCsrfHandler];
+```
+
+#### `./app/routes/test/csrf/result/index.tsx`
+```tsx
+import { Head } from "$fresh/runtime.ts";
+
+export const handler: Handlers = {
+  async POST(req: Request, ctx: Context) {
+    return await ctx.render({
+      // Request#formData などの2回以上呼ぶと Body already consumed エラーになるメソッドは
+      //   基本的に clone() してから呼ぶようにした方が安全
+      form: await req.clone().formData(),
+    });
+  },
+};
+
+export default function ValidForm(props: PageProps) {
+  return (
+    <>
+      <Head>
+        <title>Form submit result</title>
+      </Head>
+      <main class="container mx-auto my-4">
+        <h1 class="text-3xl font-bold my-2">フォームは正しく送信されました</h1>
+        <dl class="flex flex-wrap mx-2 my-2">
+          <dt class="font-bold">CSRF Token</dt>
+          <dd class="overflow-auto">{props.data.form.get("csrfToken")}</dd>
+        </dl>
+      </main>
+    </>
+  );
+}
+```
+
+#### テストケース
+- http://localhost:8000/test/csrf/token/invalid
+    - ✅ `input:hidden[name="csrfToken"]` が設置されていないこと
+    - ✅ 「送信」ボタンが表示されていること
+    - ✅ 「送信」ボタン押下時 ⇒ HTTP ERROR 403 が発生すること
+- http://localhost:8000/test/csrf/token/valid
+    - ✅ `input:hidden[name="csrfToken"]` が設置されていること
+    - ✅ 「送信」ボタンが表示されていること
+    - ✅ 「送信」ボタン押下時 ⇒ http://localhost:8000/test/csrf/token/result に正しく遷移すること

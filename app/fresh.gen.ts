@@ -6,10 +6,14 @@ import config from "./deno.json" assert { type: "json" };
 import * as $0 from "./routes/[name].tsx";
 import * as $1 from "./routes/_middleware.ts";
 import * as $2 from "./routes/api/joke.ts";
-import * as $3 from "./routes/error.tsx";
-import * as $4 from "./routes/index.tsx";
-import * as $5 from "./routes/test-connection/[request_text].tsx";
-import * as $6 from "./routes/test-connection/index.tsx";
+import * as $3 from "./routes/index.tsx";
+import * as $4 from "./routes/test/csrf/form/_middleware.ts";
+import * as $5 from "./routes/test/csrf/form/invalid.tsx";
+import * as $6 from "./routes/test/csrf/form/valid.tsx";
+import * as $7 from "./routes/test/csrf/result/_middleware.ts";
+import * as $8 from "./routes/test/csrf/result/index.tsx";
+import * as $9 from "./routes/test/supabase-connection/[request_text].tsx";
+import * as $10 from "./routes/test/supabase-connection/index.tsx";
 import * as $$0 from "./islands/Counter.tsx";
 
 const manifest = {
@@ -17,10 +21,14 @@ const manifest = {
     "./routes/[name].tsx": $0,
     "./routes/_middleware.ts": $1,
     "./routes/api/joke.ts": $2,
-    "./routes/error.tsx": $3,
-    "./routes/index.tsx": $4,
-    "./routes/test-connection/[request_text].tsx": $5,
-    "./routes/test-connection/index.tsx": $6,
+    "./routes/index.tsx": $3,
+    "./routes/test/csrf/form/_middleware.ts": $4,
+    "./routes/test/csrf/form/invalid.tsx": $5,
+    "./routes/test/csrf/form/valid.tsx": $6,
+    "./routes/test/csrf/result/_middleware.ts": $7,
+    "./routes/test/csrf/result/index.tsx": $8,
+    "./routes/test/supabase-connection/[request_text].tsx": $9,
+    "./routes/test/supabase-connection/index.tsx": $10,
   },
   islands: {
     "./islands/Counter.tsx": $$0,

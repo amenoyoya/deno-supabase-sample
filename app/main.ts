@@ -5,10 +5,18 @@
 /// <reference lib="deno.ns" />
 
 import "dotenv/load.ts"; // for loading .env file
-import { start } from "$fresh/server.ts";
+import { start, RenderFunction } from "$fresh/server.ts";
 import manifest from "./fresh.gen.ts";
 
 import twindPlugin from "$fresh/plugins/twind.ts";
 import twindConfig from "./twind.config.ts";
 
-await start(manifest, { plugins: [twindPlugin(twindConfig)] });
+const renderFn: RenderFunction = (ctx, render) => {
+  ctx.lang = "ja";
+  render();
+};
+
+await start(manifest, {
+  plugins: [twindPlugin(twindConfig)],
+  render: renderFn,
+});
